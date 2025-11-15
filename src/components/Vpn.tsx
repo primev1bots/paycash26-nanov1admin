@@ -14,14 +14,14 @@ import { getDatabase, ref, onValue, off, set } from 'firebase/database';
 
 // --- Firebase ---
 const firebaseConfig = {
-  apiKey: "AIzaSyBQFKqKGmVpNv4aHQhLfldQ6CouBmtYwYY",
-  authDomain: "watchhamelite-primev1.firebaseapp.com",
-  databaseURL: "https://watchhamelite-primev1-default-rtdb.firebaseio.com",
-  projectId: "watchhamelite-primev1",
-  storageBucket: "watchhamelite-primev1.firebasestorage.app",
-  messagingSenderId: "868246294583",
-  appId: "1:868246294583:web:70da61aadda9b1ed4defb2",
-  measurementId: "G-20Z4Q1H7D9"
+  apiKey: "AIzaSyDxCJzoya9ncucqJFAcIe8ocIXAIsMl6BE",
+  authDomain: "paycash26-nanov1.firebaseapp.com",
+  databaseURL: "https://paycash26-nanov1-default-rtdb.firebaseio.com",
+  projectId: "paycash26-nanov1",
+  storageBucket: "paycash26-nanov1.firebasestorage.app",
+  messagingSenderId: "307223058212",
+  appId: "1:307223058212:web:525ee735f268c6584b85b1",
+  measurementId: "G-Y3FSY4QXKK"
 };
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
