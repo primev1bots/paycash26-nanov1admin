@@ -360,28 +360,7 @@ const Dashboard: React.FC<AdminPanelProps> = ({}) => {
             <ChevronLeft className="w-4 h-4" />
           </button>
 
-          <div className="flex items-center gap-1">
-            {getPageNumbers().map((pageNumber, index) =>
-              pageNumber === '...' ? (
-                <span key={`ellipsis-${index}`} className="px-2 py-1 text-gray-500">
-                  ...
-                </span>
-              ) : (
-                <button
-                  key={pageNumber}
-                  onClick={() => goToPage(pageNumber as number)}
-                  className={`min-w-[40px] h-10 px-2 rounded-lg transition-all duration-200 ${
-                    currentPage === pageNumber
-                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25'
-                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'
-                  }`}
-                >
-                  {pageNumber}
-                </button>
-              )
-            )}
-          </div>
-
+          
           <button
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage === totalPages}
