@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ref, set, onValue } from "firebase/database";
 import { database } from "../firebase";
-import { FaPercentage, FaCoins, FaVideo, FaHeadset, FaUpload, FaImage } from "react-icons/fa";
+import { FaPercentage, FaCoins, FaVideo, FaHeadset, FaUpload, FaImage, FaRobot, FaAd } from "react-icons/fa";
 
 // NOTE: Do NOT put your Cloudinary API SECRET in the browser. The Upload Widget below
 // works with an **unsigned** upload preset. Ensure your preset allows unsigned uploads.
@@ -23,10 +23,10 @@ interface AppConfig {
   supportUrl: string;
   tutorialVideoId: string;
   referralCommissionRate: number;
-  // miningBaseAmount REMOVED per request
   miningMaxAmount: number;
-  // store duration in ms in DB, but UI edits in minutes
   miningDuration: number;
+  monetagAppId: string;
+  botUsername: string;
 }
 
 interface SliderImage {
@@ -45,9 +45,10 @@ const AdminPanel: React.FC = () => {
     supportUrl: "https://t.me/nan0v1_support",
     tutorialVideoId: "dQw4w9WgXcQ",
     referralCommissionRate: 10,
-    // miningBaseAmount removed
     miningMaxAmount: 1.0,
-    miningDuration: 60000, // stored in ms
+    miningDuration: 60000,
+    monetagAppId: "",
+    botUsername: "PayCash26_bot",
   });
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -73,9 +74,10 @@ const AdminPanel: React.FC = () => {
               supportUrl: data.supportUrl || "https://t.me/nan0v1_support",
               tutorialVideoId: data.tutorialVideoId || "dQw4w9WgXcQ",
               referralCommissionRate: data.referralCommissionRate ?? 10,
-              // miningBaseAmount removed
               miningMaxAmount: data.miningMaxAmount ?? 1.0,
               miningDuration: data.miningDuration ?? 60000,
+              monetagAppId: data.monetagAppId || "",
+              botUsername: data.botUsername || "PayCash26_bot",
             });
           }
           setLoading(false);
@@ -160,10 +162,10 @@ const AdminPanel: React.FC = () => {
 
   const handleMiningSettingsUpdate = async () => {
     const maxAmount = appConfig.miningMaxAmount;
-    const duration = appConfig.miningDuration; // ms
+    const duration = appConfig.miningDuration;
 
     if (maxAmount < 0 || duration < 60000) {
-      setMessage("Invalid mining settings! Minimum duration is 1 minute and max must be ≥ 0.");
+      setMessage("Invalid mining settings! Minimum duration is 1 minute and max amount must be ≥ 0.");
       return;
     }
 
@@ -188,6 +190,60 @@ const AdminPanel: React.FC = () => {
       setMessage(errorMessage);
       setError(errorMessage);
     }
+  };
+
+  const handleBotSettingsUpdate = async () => {
+    const botUsername = appConfig.botUsername.trim();
+    if (!botUsername) {
+      setMessage("Bot username cannot be empty!");
+      return;
+    }
+
+    if (!botUsername.endsWith('_bot') && !botUsername.endsWith('Bot')) {
+      setMessage("Bot username should typically end with '_bot' or 'Bot'");
+    }
+
+    try {
+      await set(ref(database, "appConfig"), appConfig);
+      setMessage("Bot settings updated successfully!");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Error updating bot settings. Please try again.";
+      setMessage(errorMessage);
+      setError(errorMessage);
+    }
+  };
+
+  const handleAdSettingsUpdate = async () => {
+    const monetagAppId = appConfig.monetagAppId.trim();
+    
+    if (!monetagAppId) {
+      setMessage("Monetag App ID cannot be empty!");
+      return;
+    }
+
+    try {
+      await set(ref(database, "appConfig"), appConfig);
+      setMessage("Ad settings updated successfully!");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Error updating ad settings. Please try again.";
+      setMessage(errorMessage);
+      setError(errorMessage);
+    }
+  };
+
+  // Format number to avoid scientific notation
+  const formatNumber = (num: number): string => {
+    if (num === 0) return "0";
+    
+    // For very small numbers, use fixed notation
+    if (num < 0.001 && num > 0) {
+      return num.toFixed(8).replace(/\.?0+$/, '');
+    }
+    
+    // For regular numbers, use standard formatting
+    return num.toString();
   };
 
   if (loading) {
@@ -242,45 +298,43 @@ const AdminPanel: React.FC = () => {
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            {/* Base Amount removed per request */}
-
             <div>
-              <label className="block text-sm font-medium mb-2">Max Amount ({appConfig.miningMaxAmount}):</label>
+              <label className="block text-sm font-medium mb-2">Max Amount:</label>
               <input
                 type="number"
-                min="0.01"
-                max="100"
-                step="0.01"
+                min="0"
+                max="1000000"
+                step="any"
                 value={appConfig.miningMaxAmount}
-                onChange={(e) => handleInputChange("miningMaxAmount", parseFloat(e.target.value) || 1.0)}
+                onChange={(e) => handleInputChange("miningMaxAmount", parseFloat(e.target.value) || 0)}
                 className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="0.01"
+                placeholder="1.0"
               />
-              <p className="text-xs text-gray-400 mt-1">Maximum mining amount</p>
+              <p className="text-xs text-gray-400 mt-1">Maximum mining amount (any positive number)</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Duration (minutes) ({minutes}):</label>
+              <label className="block text-sm font-medium mb-2">Duration (minutes):</label>
               <input
                 type="number"
                 min="1"
-                max="300"
+                max="1440"
                 step="1"
                 value={minutes}
                 onChange={(e) => handleInputChange("miningDuration", (parseInt(e.target.value) || 1) * 60000)}
                 className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="1"
               />
-              <p className="text-xs text-gray-400 mt-1">Mining duration in minutes</p>
+              <p className="text-xs text-gray-400 mt-1">Mining duration in minutes (1-1440)</p>
             </div>
           </div>
 
           <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 mb-4">
             <h3 className="text-sm font-semibold text-blue-300 mb-2">Current Mining Settings:</h3>
             <p className="text-sm text-blue-200">
-              Amount Range: $0.00 → ${appConfig.miningMaxAmount.toFixed(2)}
+              Max Amount: ${formatNumber(appConfig.miningMaxAmount)}
               <br /> Duration: {minutes} minute{minutes === 1 ? "" : "s"}
-              <br /> Progress: 0.00 → 1.00 over {minutes}m
+              <br /> Mining starts from $0.00 and progresses to ${formatNumber(appConfig.miningMaxAmount)}
             </p>
           </div>
 
@@ -323,6 +377,68 @@ const AdminPanel: React.FC = () => {
           </button>
         </div>
 
+        {/* Bot Configuration Section */}
+        <div className="bg-gray-800 rounded-lg p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-4 text-blue-300 flex items-center">
+            <FaRobot className="mr-2" /> Bot Configuration
+          </h2>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-2">Bot Username:</label>
+            <input
+              type="text"
+              value={appConfig.botUsername || ""}
+              onChange={(e) => handleInputChange("botUsername", e.target.value)}
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="PayCash26_bot"
+            />
+            <p className="text-xs text-gray-400 mt-1">Enter your Telegram bot username (without @)</p>
+          </div>
+
+          <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 mb-4">
+            <h3 className="text-sm font-semibold text-green-300 mb-2">Referral Link Preview:</h3>
+            <p className="text-sm text-green-200">
+              https://t.me/{appConfig.botUsername || 'your_bot'}?start=REFERRAL_CODE
+              <br /> Users will join via: @{appConfig.botUsername || 'your_bot'}
+            </p>
+          </div>
+
+          <button onClick={handleBotSettingsUpdate} className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-6 rounded-lg transition duration-200">
+            Update Bot Settings
+          </button>
+        </div>
+
+        {/* Ad Configuration Section */}
+        <div className="bg-gray-800 rounded-lg p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-4 text-blue-300 flex items-center">
+            <FaAd className="mr-2" /> Ad Network Configuration
+          </h2>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-2">Monetag App ID:</label>
+            <input
+              type="text"
+              value={appConfig.monetagAppId || ""}
+              onChange={(e) => handleInputChange("monetagAppId", e.target.value)}
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Enter your Monetag App ID"
+            />
+            <p className="text-xs text-gray-400 mt-1">Get this from your Monetag dashboard</p>
+          </div>
+
+          <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-4 mb-4">
+            <h3 className="text-sm font-semibold text-purple-300 mb-2">Monetag Integration:</h3>
+            <p className="text-sm text-purple-200">
+              App ID: {appConfig.monetagAppId || 'Not configured'}
+              <br /> Status: {appConfig.monetagAppId ? 'Active' : 'Inactive'}
+            </p>
+          </div>
+
+          <button onClick={handleAdSettingsUpdate} className="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-6 rounded-lg transition duration-200">
+            Update Ad Settings
+          </button>
+        </div>
+
         {/* Support & Tutorial Configuration Section */}
         <div className="bg-gray-800 rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4 text-blue-300 flex items-center">
@@ -355,15 +471,15 @@ const AdminPanel: React.FC = () => {
             <p className="text-xs text-gray-400 mt-1">Enter only the YouTube video ID (the part after "v=" in the URL)</p>
           </div>
 
-          <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-4 mb-4">
-            <h3 className="text-sm font-semibold text-purple-300 mb-2">Preview:</h3>
-            <p className="text-sm text-purple-200">
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 mb-4">
+            <h3 className="text-sm font-semibold text-blue-300 mb-2">Preview:</h3>
+            <p className="text-sm text-blue-200">
               Support URL: <a href={appConfig.supportUrl} target="_blank" rel="noopener noreferrer" className="underline">{appConfig.supportUrl}</a>
               <br /> Tutorial Video: <a href={`https://www.youtube.com/watch?v=${appConfig.tutorialVideoId}`} target="_blank" rel="noopener noreferrer" className="underline">Watch Tutorial</a>
             </p>
           </div>
 
-          <button onClick={handleSupportTutorialUpdate} className="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-6 rounded-lg transition duration-200">
+          <button onClick={handleSupportTutorialUpdate} className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg transition duration-200">
             Update Support & Tutorial
           </button>
         </div>
@@ -389,7 +505,7 @@ const AdminPanel: React.FC = () => {
               <FaImage className="mr-2" /> App Logo:
             </label>
             <div className="flex items-center gap-3">
-              <button onClick={openLogoWidget} className="inline-flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">
+              <button onClick={openLogoWidget} className="inline-flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded">
                 <FaUpload /> Upload Logo
               </button>
               {appConfig.logoUrl && (
@@ -403,7 +519,7 @@ const AdminPanel: React.FC = () => {
             )}
           </div>
 
-          <button onClick={handleSupportTutorialUpdate} className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg transition duration-200">
+          <button onClick={handleSupportTutorialUpdate} className="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-6 rounded-lg transition duration-200">
             Update App Settings
           </button>
         </div>
