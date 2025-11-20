@@ -27,6 +27,7 @@ interface AppConfig {
   miningDuration: number;
   monetagAppId: string;
   botUsername: string;
+  libtlZoneId: string; // ADDED: libtl Zone ID for rewarded ads
 }
 
 interface SliderImage {
@@ -49,6 +50,7 @@ const AdminPanel: React.FC = () => {
     miningDuration: 60000,
     monetagAppId: "",
     botUsername: "PayCash26_bot",
+    libtlZoneId: "", // ADDED: Initialize libtlZoneId
   });
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -78,6 +80,7 @@ const AdminPanel: React.FC = () => {
               miningDuration: data.miningDuration ?? 60000,
               monetagAppId: data.monetagAppId || "",
               botUsername: data.botUsername || "PayCash26_bot",
+              libtlZoneId: data.libtlZoneId || "", // ADDED: Load libtlZoneId from Firebase
             });
           }
           setLoading(false);
@@ -216,9 +219,10 @@ const AdminPanel: React.FC = () => {
 
   const handleAdSettingsUpdate = async () => {
     const monetagAppId = appConfig.monetagAppId.trim();
+    const libtlZoneId = appConfig.libtlZoneId.trim();
     
-    if (!monetagAppId) {
-      setMessage("Monetag App ID cannot be empty!");
+    if (!monetagAppId && !libtlZoneId) {
+      setMessage("Please configure at least one ad network!");
       return;
     }
 
@@ -377,6 +381,62 @@ const AdminPanel: React.FC = () => {
           </button>
         </div>
 
+        {/* Ad Configuration Section - UPDATED with libtl */}
+        <div className="bg-gray-800 rounded-lg p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-4 text-blue-300 flex items-center">
+            <FaAd className="mr-2" /> Ad Network Configuration
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Monetag App ID:</label>
+              <input
+                type="text"
+                value={appConfig.monetagAppId || ""}
+                onChange={(e) => handleInputChange("monetagAppId", e.target.value)}
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Enter your Monetag App ID"
+              />
+              <p className="text-xs text-gray-400 mt-1">Get this from your Monetag dashboard</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Libtl Zone ID:</label>
+              <input
+                type="text"
+                value={appConfig.libtlZoneId || ""}
+                onChange={(e) => handleInputChange("libtlZoneId", e.target.value)}
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Enter your Libtl Zone ID"
+              />
+              <p className="text-xs text-gray-400 mt-1">Get this from your Libtl dashboard (for mining rewards)</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-purple-300 mb-2">Monetag Integration:</h3>
+              <p className="text-sm text-purple-200">
+                App ID: {appConfig.monetagAppId || 'Not configured'}
+                <br /> Status: {appConfig.monetagAppId ? 'Active' : 'Inactive'}
+              </p>
+            </div>
+
+            <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-indigo-300 mb-2">Libtl Integration:</h3>
+              <p className="text-sm text-indigo-200">
+                Zone ID: {appConfig.libtlZoneId || 'Not configured'}
+                <br /> Status: {appConfig.libtlZoneId ? 'Active' : 'Inactive'}
+                <br /> Used for: Mining reward ads
+              </p>
+            </div>
+          </div>
+
+          <button onClick={handleAdSettingsUpdate} className="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-6 rounded-lg transition duration-200">
+            Update Ad Settings
+          </button>
+        </div>
+
         {/* Bot Configuration Section */}
         <div className="bg-gray-800 rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4 text-blue-300 flex items-center">
@@ -405,37 +465,6 @@ const AdminPanel: React.FC = () => {
 
           <button onClick={handleBotSettingsUpdate} className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-6 rounded-lg transition duration-200">
             Update Bot Settings
-          </button>
-        </div>
-
-        {/* Ad Configuration Section */}
-        <div className="bg-gray-800 rounded-lg p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4 text-blue-300 flex items-center">
-            <FaAd className="mr-2" /> Ad Network Configuration
-          </h2>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">Monetag App ID:</label>
-            <input
-              type="text"
-              value={appConfig.monetagAppId || ""}
-              onChange={(e) => handleInputChange("monetagAppId", e.target.value)}
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter your Monetag App ID"
-            />
-            <p className="text-xs text-gray-400 mt-1">Get this from your Monetag dashboard</p>
-          </div>
-
-          <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-4 mb-4">
-            <h3 className="text-sm font-semibold text-purple-300 mb-2">Monetag Integration:</h3>
-            <p className="text-sm text-purple-200">
-              App ID: {appConfig.monetagAppId || 'Not configured'}
-              <br /> Status: {appConfig.monetagAppId ? 'Active' : 'Inactive'}
-            </p>
-          </div>
-
-          <button onClick={handleAdSettingsUpdate} className="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-6 rounded-lg transition duration-200">
-            Update Ad Settings
           </button>
         </div>
 
