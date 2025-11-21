@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ref, get, update, onValue, off, push, set, query, orderByChild, equalTo } from 'firebase/database';
 import { database } from '../firebase';
-import { Users, DollarSign, TrendingUp, Clock, Search, Edit, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Filter, Download, Coins, Eye } from 'lucide-react';
+import { Users, DollarSign, TrendingUp, Clock, Search, Edit, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Filter, Download, Coins, Eye, UserCheck } from 'lucide-react';
 
 interface UserData {
   telegramId: number;
@@ -56,6 +56,7 @@ interface AdminStats {
   totalWithdrawn: number;
   totalEarnings: number;
   pendingWithdrawals: number;
+  activeUsers: number; // Added active users count
 }
 
 interface WalletConfig {
@@ -90,7 +91,8 @@ const Dashboard: React.FC<AdminPanelProps> = ({
     totalUsers: 0,
     totalWithdrawn: 0,
     totalEarnings: 0,
-    pendingWithdrawals: 0
+    pendingWithdrawals: 0,
+    activeUsers: 0 // Initialize active users
   });
   const [users, setUsers] = useState<UserData[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<UserData[]>([]);
@@ -114,6 +116,9 @@ const Dashboard: React.FC<AdminPanelProps> = ({
   // Earnings pagination
   const [earningsCurrentPage, setEarningsCurrentPage] = useState(1);
   const [earningsPerPage, setEarningsPerPage] = useState(10);
+
+  // Active users tracking
+  const [, setActiveUsersCount] = useState(0);
 
   // Load admin data
   useEffect(() => {
@@ -175,6 +180,26 @@ const Dashboard: React.FC<AdminPanelProps> = ({
       loadEarningsHistory(selectedUser.telegramId);
     }
   }, [selectedUser]);
+
+  // Calculate active users whenever users data changes
+  useEffect(() => {
+    calculateActiveUsers(users);
+  }, [users]);
+
+  // Function to calculate active users (last 24 hours)
+  const calculateActiveUsers = (usersData: UserData[]) => {
+    const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
+    
+    const activeUsers = usersData.filter(user => {
+      if (!user.lastActive) return false;
+      
+      const lastActiveTime = new Date(user.lastActive).getTime();
+      return lastActiveTime >= twentyFourHoursAgo;
+    }).length;
+
+    setActiveUsersCount(activeUsers);
+    setStats(prev => ({ ...prev, activeUsers }));
+  };
 
   // Pagination calculations for users
   const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
@@ -282,6 +307,7 @@ const Dashboard: React.FC<AdminPanelProps> = ({
         });
         setUsers(usersData);
         calculateStats(usersData);
+        calculateActiveUsers(usersData); // Calculate active users when users data changes
       }
     });
 
@@ -313,12 +339,12 @@ const Dashboard: React.FC<AdminPanelProps> = ({
     const totalWithdrawn = usersData.reduce((sum, user) => sum + (user.totalWithdrawn || 0), 0);
     const totalEarnings = usersData.reduce((sum, user) => sum + (user.totalEarned || 0), 0);
     
-    setStats({
+    setStats(prev => ({
+      ...prev,
       totalUsers: usersData.length,
       totalWithdrawn,
-      totalEarnings,
-      pendingWithdrawals: stats.pendingWithdrawals
-    });
+      totalEarnings
+    }));
   };
 
   const loadAdminData = async () => {
@@ -334,6 +360,7 @@ const Dashboard: React.FC<AdminPanelProps> = ({
         });
         setUsers(usersData);
         calculateStats(usersData);
+        calculateActiveUsers(usersData); // Calculate active users on initial load
       }
 
       // Load pending withdrawals
@@ -1261,7 +1288,7 @@ const Dashboard: React.FC<AdminPanelProps> = ({
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-6 mb-6 sm:mb-8">
           {/* Total Users */}
           <div className="bg-gray-800 rounded-xl p-3 sm:p-6 border border-gray-700 hover:border-gray-600 transition-colors">
             <div className="flex items-center justify-between">
@@ -1275,6 +1302,22 @@ const Dashboard: React.FC<AdminPanelProps> = ({
             </div>
           </div>
 
+          {/* Active Users (NEW) */}
+          <div className="bg-gray-800 rounded-xl p-3 sm:p-6 border border-gray-700 hover:border-gray-600 transition-colors">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-xs sm:text-sm">Active Users (24h)</p>
+                <p className="text-lg sm:text-2xl font-bold mt-1 text-white">{stats.activeUsers}</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  {stats.totalUsers > 0 ? `${((stats.activeUsers / stats.totalUsers) * 100).toFixed(1)}% active` : '0% active'}
+                </p>
+              </div>
+              <div className="p-2 sm:p-3 bg-green-500/20 rounded-lg">
+                <UserCheck className="w-4 h-4 sm:w-6 sm:h-6 text-green-400" />
+              </div>
+            </div>
+          </div>
+
           {/* Total Withdrawn */}
           <div className="bg-gray-800 rounded-xl p-3 sm:p-6 border border-gray-700 hover:border-gray-600 transition-colors">
             <div className="flex items-center justify-between">
@@ -1282,8 +1325,8 @@ const Dashboard: React.FC<AdminPanelProps> = ({
                 <p className="text-gray-400 text-xs sm:text-sm">Total Withdrawn</p>
                 <p className="text-lg sm:text-2xl font-bold mt-1 text-white">${stats.totalWithdrawn.toFixed(2)}</p>
               </div>
-              <div className="p-2 sm:p-3 bg-green-500/20 rounded-lg">
-                <DollarSign className="w-4 h-4 sm:w-6 sm:h-6 text-green-400" />
+              <div className="p-2 sm:p-3 bg-orange-500/20 rounded-lg">
+                <DollarSign className="w-4 h-4 sm:w-6 sm:h-6 text-orange-400" />
               </div>
             </div>
           </div>
