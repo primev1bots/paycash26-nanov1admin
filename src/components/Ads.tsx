@@ -15,15 +15,15 @@ interface AdsConfig {
   gigapub: AdConfig;
   onclicka: AdConfig;
   adextra: AdConfig;
-  adsovio: AdConfig;
+  adexora: AdConfig;
 }
 
 const AdminPanel: React.FC = () => {
   const [adsConfig, setAdsConfig] = useState<AdsConfig>({
-    gigapub: { reward: 0.5, dailyLimit: 5, hourlyLimit: 2, cooldown: 60, waitTime: 15, enabled: true, appId: '1872' },
-    onclicka: { reward: 0.5, dailyLimit: 5, hourlyLimit: 2, cooldown: 60, waitTime: 15, enabled: true, appId: '6090192' },
-    adextra: { reward: 0.5, dailyLimit: 5, hourlyLimit: 2, cooldown: 60, waitTime: 15, enabled: true, appId: 'c573986974ab6f6b9e52bb47e7a296e25a2db758' },
-    adsovio: { reward: 0.5, dailyLimit: 5, hourlyLimit: 2, cooldown: 60, waitTime: 15, enabled: true, appId: 'ADSOVIO_APP_ID' },
+    gigapub: { reward: 0.5, dailyLimit: 5, hourlyLimit: 2, cooldown: 60, waitTime: 15, enabled: true, appId: '' },
+    onclicka: { reward: 0.5, dailyLimit: 5, hourlyLimit: 2, cooldown: 60, waitTime: 15, enabled: true, appId: '' },
+    adextra: { reward: 0.5, dailyLimit: 5, hourlyLimit: 2, cooldown: 60, waitTime: 15, enabled: true, appId: '' },
+    adexora: { reward: 0.5, dailyLimit: 5, hourlyLimit: 2, cooldown: 60, waitTime: 15, enabled: true, appId: '' },
   });
 
   const [saving, setSaving] = useState<keyof AdsConfig | null>(null);
@@ -41,7 +41,7 @@ const AdminPanel: React.FC = () => {
           gigapub: { ...prev.gigapub, ...(configData.gigapub || {}) },
           onclicka: { ...prev.onclicka, ...(configData.onclicka || {}) },
           adextra: { ...prev.adextra, ...(configData.adextra || {}) },
-          adsovio: { ...prev.adsovio, ...(configData.adsovio || {}) },
+          adexora: { ...prev.adexora, ...(configData.adexora || {}) },
         }));
       }
     });
@@ -85,14 +85,21 @@ const AdminPanel: React.FC = () => {
     gigapub: 'Gigapub Ads',
     onclicka: 'Onclicka Ads',
     adextra: 'AdExtra Premium',
-    adsovio: 'Adsovio',
+    adexora: 'Adexora Ads',
   };
 
   const providerColors: Record<keyof AdsConfig, string> = {
     gigapub: 'from-green-500 to-teal-600',
     onclicka: 'from-orange-500 to-red-600',
     adextra: 'from-cyan-500 to-blue-600',
-    adsovio: 'from-orange-500 to-red-600',
+    adexora: 'from-purple-500 to-pink-600',
+  };
+
+  const providerDescriptions: Record<keyof AdsConfig, string> = {
+    gigapub: 'High-performance ad network with premium offers',
+    onclicka: 'Interactive video ads with high engagement',
+    adextra: 'Premium rewarded ads with high conversion rates',
+    adexora: 'Next-generation ad platform with optimized rewards',
   };
 
   return (
@@ -103,9 +110,18 @@ const AdminPanel: React.FC = () => {
           <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent mb-3">
             Ads Configuration Panel
           </h1>
+          <p className="text-gray-400 max-w-2xl mx-auto">
+            Configure your ad providers, set rewards, limits, and manage ad monetization settings
+          </p>
           <div className="mt-4 flex flex-wrap justify-center gap-2">
             <span className="px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full text-xs border border-blue-500/30">
               {Object.keys(adsConfig).length} Ad Providers
+            </span>
+            <span className="px-3 py-1 bg-green-500/20 text-green-300 rounded-full text-xs border border-green-500/30">
+              Real-time Updates
+            </span>
+            <span className="px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full text-xs border border-purple-500/30">
+              Firebase Backed
             </span>
           </div>
         </div>
@@ -132,7 +148,7 @@ const AdminPanel: React.FC = () => {
 
         {/* Configuration Cards */}
         <div className="mb-8 max-h-[100vh] overflow-y-auto custom-scrollbar">
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 pr-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-6 pr-4">
             {(Object.keys(adsConfig) as Array<keyof AdsConfig>).map((provider) => (
               <div key={provider} className="group">
                 <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-2xl hover:shadow-xl transition-all duration-300 hover:border-gray-600/50 h-full flex flex-col">
@@ -142,6 +158,7 @@ const AdminPanel: React.FC = () => {
                       <div className={`w-3 h-8 rounded-full bg-gradient-to-b ${providerColors[provider]}`}></div>
                       <div>
                         <h2 className="text-xl font-bold text-white">{providerNames[provider]}</h2>
+                        <p className="text-sm text-gray-400 mt-1">{providerDescriptions[provider]}</p>
                       </div>
                     </div>
 
@@ -272,6 +289,22 @@ const AdminPanel: React.FC = () => {
                         />
                       </div>
                     </div>
+
+                    {/* Status Indicators */}
+                    <div className="grid grid-cols-2 gap-4 pt-2">
+                      <div className="text-center p-2 bg-gray-700/30 rounded-lg">
+                        <div className="text-xs text-gray-400">Status</div>
+                        <div className={`text-sm font-medium ${adsConfig[provider].enabled ? 'text-green-400' : 'text-red-400'}`}>
+                          {adsConfig[provider].enabled ? '🟢 Active' : '🔴 Disabled'}
+                        </div>
+                      </div>
+                      <div className="text-center p-2 bg-gray-700/30 rounded-lg">
+                        <div className="text-xs text-gray-400">Reward</div>
+                        <div className="text-sm font-medium text-yellow-400">
+                          ${adsConfig[provider].reward.toFixed(2)}
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Save Button */}
@@ -298,7 +331,29 @@ const AdminPanel: React.FC = () => {
             ))}
           </div>
         </div>
+
+        {/* Footer Info */}
+        <div className="text-center text-gray-500 text-sm">
+          <p>Changes are saved automatically to Firebase. Configuration updates take effect immediately.</p>
+        </div>
       </div>
+
+      <style jsx>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(75, 85, 99, 0.3);
+          border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(139, 92, 246, 0.5);
+          border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(139, 92, 246, 0.7);
+        }
+      `}</style>
     </div>
   );
 };
